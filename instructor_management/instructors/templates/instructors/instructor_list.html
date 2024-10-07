@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instructors</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+    <style>
+        /* Suggestions box styling */         
+        #search-form {
+            position: relative; /* Relative positioning for suggestions box */
+            display:flex; /* Flex layout for the form */
+            align-items: center; /* Center items vertically */
+            margin-bottom: 15px; /* Space below the search form */
+            padding-left: 0%;
+            margin-left: 18%;
+            width: 80%;
+        }
+
+        #suggestions {
+            position: absolute; /* Position absolutely to the form */
+            top: 100%; /* Position directly below the search input */
+            left: 0; /* Align to the left */
+            right: 0; /* Make it the same width as the input */
+            z-index: 1000; /* Ensure it appears above other content */
+            background-color: white; /* Background color for visibility */
+            border: 1px solid #ccc; /* Border around suggestions */
+            display:block; /* Hide by default; show when needed */
+        }
+
+        /* Show the suggestions box when there are results */
+        .suggestions-visible {
+            display: block; /* Show when suggestions are available */
+        }
+
+        /* Suggestions box styling */
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .suggestion-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* Layout styling */
+        .container {    
+            margin-left: 12%;
+        }
+
+        .main-header {
+            height: 100px; /* Set header height */
+            background-color: #80b7ee; /* Background color */
+            margin-bottom: 20px;
+        }
+
+        .main-header .logo {
+            font-size: 20px; /* Logo font size */
+            line-height: 10px; /* Align text */
+        }
+
+        #filter-panel {
+            position: absolute;
+            right: -1500px; /* Hidden by default */
+            top: 200px;
+            width: 300px;
+            background-color: #f8f9fa;
+            border-left: 1px solid #ccc;
+            padding: 20px;
+            transition: right 0.5s ease;
+        }
+
+        #filter-panel.active {
+            right: 0; /* Slide in the filter panel */
+        }
+
+        /* Side panel for instructors */
+        #instructor-list {
+            width: 25%;
+            float: left; /* Use float to position */
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: auto; /* Set height to auto */
+            overflow-y: auto; /* Enable scrolling if necessary */
+            margin-right: 2%; /* Space on the right */
+            margin-top: 25px; /* Space on the top */
+            margin: auto;
+        }
+
+        /* Results panel */
+        #results-pane {
+            margin-top: 25px; /* Space from the top */
+            height: 350px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: scroll;
+            background-color: #f7f7f7; /* Light background for contrast */
+            float: left; /* Align to right */
+            width: 70%; /* Set width to take remaining space */
+            margin-left: 100px;
+        }
+
+        .instructor-image {
+            width: 100px; /* Adjust size as needed */
+            height: 100px;
+            border-radius: 50%; /* Optional: Make the image circular */
+            border: 2px solid black; /* Black border around image */
+            background-color: darkgrey; /* Dark grey background for visibility */
+        }
+
+        .instructor-details {
+            position: relative; /* Allows absolute positioning of the image */
+            padding: 10px; /* Adds padding around the details */
+            border: solid black;
+        }
+        
+        /* Instructor info in the list */
+        .instructor-list-item img {
+            width: 30px; /* Adjusted width */
+            height: 30px; /* Adjusted height */
+            border-radius: 50%;  /* Circular profile picture */
+            margin-right: 10px;
+            object-fit: cover;
+        }
+
+        .instructor-list-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .instructor-list-item:hover {
+            background-color: #e6f7ff; /* Light blue background on hover */
+            cursor: pointer; /* Pointer cursor to indicate clickable */
+        }
+
+        .instructor-name {
+            font-size: 16px;
+            font-weight: bold;
+        }   
+
+        .filter-btn {
+            margin-right: 20px;
+        }
+
+        .bottom-buttons {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .bottom-buttons button {
+            margin: 0 5px;
+        }
+
+
+        #search-input {
+            flex: 1; /* Take up available space */
+            margin-right: 5px; /* Space between input and buttons */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="main-header clearfix" role="header">
+        <div class="logo">
+            <a href="http://127.0.0.1:8000/instructors/"><em>Home</em></a>
+        </div>
+    </header>
+
+    <!-- Search Form -->
+    <div id="search-form" class="d-flex justify-content-between align-items-center mt-4">
+        <form method="GET" action="{% url 'instructor_list' %}" class="d-flex" id="search-form">
+            <input type="text" id="search-input" name="q" placeholder="Search for Instructor" class="form-control" autocomplete="off" value="{{ query }}">
+            <div id="suggestions" class="suggestions-box"></div> <!-- Suggestions box -->
+            <button type="submit" class="btn btn-primary filter-btn">Search</button>
+            <button type="button" class="btn btn-secondary" id="filter-btn">Filter</button>
+        </form>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container d-flex">
+        <div id="instructor-list" class="mt-4">
+            <h5>Instructors</h5>
+            <div id="instructor-items">
+                {% for instructor in instructors %}
+                    <div class="instructor-list-item" data-id="{{ instructor.id }}">
+                        {% if instructor.profile_image %}
+                            <img src="{{ instructor.profile_image.url }}" alt="{{ instructor.first_name }} {{ instructor.last_name }}">
+                        {% endif %}                      
+                        {{ instructor.first_name }} {{ instructor.last_name }}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Results Pane -->
+        <div id="results-pane" class="mt-4">
+            <h5>Results panel</h5>
+            <div id="instructor-details"></div>
+        </div>
+    </div>
+    <!-- Bottom buttons -->
+    <div class="bottom-buttons">
+        <button class="btn btn-primary">Previous</button>
+        <button class="btn btn-secondary">Print</button>
+        <button class="btn btn-success">Download</button>
+    </div>
+
+    <!-- Filter panel (slide-in) -->
+    <div id="filter-panel">
+        <form method="GET" action="{% url 'instructor_list' %}" id="filter-form">
+            <h5>Employment Type</h5>
+            <div class="form-group">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="filter" id="default" value="ALL" {% if filter == 'ALL' %}checked{% endif %}>
+                    <label class="form-check-label" for="default">All</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="filter" id="regular" value="REGULAR" {% if filter == 'REGULAR' %}checked{% endif %}>
+                    <label class="form-check-label" for="regular">Regular</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="filter" id="cos" value="COS" {% if filter == 'COS' %}checked{% endif %}>
+                    <label class="form-check-label" for="cos">COS</label>
+                </div>
+            </div>
+
+            <h5>Department Type</h5>
+            <div class="form-group">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="department" id="cot" value="COT" {% if department == 'COT' %}checked{% endif %}>
+                    <label class="form-check-label" for="cot">College of Technology (COT)</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="department" id="coed" value="COED" {% if department == 'COED' %}checked{% endif %}>
+                    <label class="form-check-label" for="coed">College of Education (COED)</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="department" id="coeng" value="COENG" {% if department == 'COENG' %}checked{% endif %}>
+                    <label class="form-check-label" for="coeng">College of Engineering (COENG)</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="department" id="comgent" value="COMGENT" {% if department == 'COMGENT' %}checked{% endif %}>
+                    <label class="form-check-label" for="comgent">College of Management and Entrepreneurship (COMGENT)</label>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block mt-4">Apply</button>
+        </form>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script>
+        $(document).ready(function() {
+            // Toggle filter panel
+            $('#filter-btn').click(function() {
+                $('#filter-panel').toggleClass('active');
+            });
+    
+            // Fetch suggestions as the user types in the search input
+            $("#search-input").keyup(function() {
+                var query = $(this).val();
+                var filter = $('input[name="filter"]:checked').val();
+
+                if (query.length > 1) {
+                    $.ajax({
+                        url: "{% url 'instructor_search' %}",
+                        data: {
+                            'q': query,
+                            'filter': filter
+                        },
+                        success: function(data) {
+                            $("#suggestions").html('');  // Clear previous suggestions
+                            if (data.results.length > 0) {
+                                $("#suggestions").addClass('suggestions-visible'); // Show suggestions
+                                data.results.forEach(function(item) {
+                                    $("#suggestions").append('<div class="suggestion-item" data-id="' + item.id + '">' + item.name + '</div>');
+                                });
+                            } else {
+                                $("#suggestions").removeClass('suggestions-visible'); // Hide if no results
+                                $("#suggestions").append('<div class="suggestion-item">No suggestions found.</div>');
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Error fetching suggestions:", error); // Log any errors
+                            $("#suggestions").removeClass('suggestions-visible'); // Hide suggestions on error
+                        }
+                    });
+                } else {
+                    $("#suggestions").removeClass('suggestions-visible');  // Hide suggestions if input length is less than 2
+                }
+            });
+    
+            // When a suggestion is clicked, fetch instructor details
+            $(document).on('click', '.suggestion-item', function() {
+                var instructorId = $(this).data('id');
+                $.ajax({
+                    url: "{% url 'instructor_details' %}",
+                    data: {
+                        'id': instructorId
+                    },
+                    success: function(data) {
+                        $("#instructor-details").html(data.html);  // Populate results pane
+                        $("#suggestions").empty();  // Clear suggestions
+                        $("#search-input").val('');  // Clear search input
+                    }
+                });
+            });
+    
+            // Click event for instructor list items in the side panel
+            $(document).on('click', '.instructor-list-item', function() {
+                var instructorId = $(this).data('id');  // Get the instructor ID from data attribute
+                $.ajax({
+                    url: "{% url 'instructor_details' %}",
+                    data: {
+                        'id': instructorId
+                    },
+                    success: function(data) {
+                        $("#instructor-details").html(data.html);  // Populate results pane
+                        $("#suggestions").empty();  // Clear suggestions
+                        $("#search-input").val('');  // Clear search input
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error fetching instructor details:", error); // Log any errors
+                    }
+                }); 
+            });
+    
+            // Reset search input when a new filter is selected
+            $('#filter-form input[type="radio"]').change(function() {
+                $("#search-input").val('');  // Clear the search input
+                $("#suggestions").empty();  // Clear suggestions
+            });
+        });
+    </script>
+</body>
+</html>

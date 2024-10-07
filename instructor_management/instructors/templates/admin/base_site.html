@@ -1,0 +1,22 @@
+{% extends "admin/base.html" %}
+
+{% block extrahead %}
+<link rel="stylesheet" type="text/css" href="{% static 'admin_custom/custom_admin.css' %}">
+{% endblock %}
+
+
+{% block title %}My Custom Admin{% endblock %}
+
+{% block branding %}
+<div class="custom-header">
+    <h1>My Custom Admin Panel</h1>
+    <img src="/static/logo.png" alt="Logo" />
+</div>
+{% endblock %}
+
+{% block nav-global %}
+<ul class="custom-nav">
+    <li><a href="/admin/">Dashboard</a></li>
+    <li><a href="/">Visit Site</a></li>
+</ul>
+{% endblock %}
